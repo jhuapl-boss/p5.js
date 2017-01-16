@@ -34,6 +34,8 @@ require('../core/error_helpers');
  *                                p5.Image.
  * @param  {Function(Event)}    [failureCallback] called with event error if
  *                                the image fails to load.
+ * @param  {Object}             [headers] Optional headers to be passed along
+ *                                with the request
  * @return {p5.Image}             the p5.Image object
  * @example
  * <div>
@@ -53,7 +55,7 @@ require('../core/error_helpers');
  *   // here we use a callback to display the image after loading
  *   loadImage("assets/laDefense.jpg", function(img) {
  *     image(img, 0, 0);
- *   });
+ *   }, null, { customHeader: "customValue" });
  * }
  * </code>
  * </div>
@@ -63,10 +65,22 @@ require('../core/error_helpers');
  * image of the underside of a white umbrella and grided ceililng above
  *
  */
-p5.prototype.loadImage = function(path, successCallback, failureCallback) {
+p5.prototype.loadImage = function(path, successCallback, failureCallback, headers={}) {
   var img = new Image();
   var pImg = new p5.Image(1, 1, this);
   var decrementPreload = p5._getDecrementPreload.apply(this, arguments);
+
+  fetch(path, {
+    headers,
+  }).then(res => {
+    if (res.ok) {
+      res.blob().then(b => {
+        img.src = window.webkitURL.createObjectURL(b);
+      });
+    } else {
+      console.error(res);
+    }
+  });
 
   img.onload = function() {
     pImg.width = pImg.canvas.width = img.width;
@@ -99,9 +113,6 @@ p5.prototype.loadImage = function(path, successCallback, failureCallback) {
   if(path.indexOf('data:image/') !== 0) {
     img.crossOrigin = 'Anonymous';
   }
-
-  //start loading the image
-  img.src = path;
 
   return pImg;
 };
